@@ -1,28 +1,35 @@
 <template>
   <header>
     <h1 class="title"> kiszmenu </h1>
-    <ul>
+    <ul v-if="$store.state.loaded">
       <li>
         <router-link to="/add">Go to Add</router-link>
       </li>
       <li>
         <router-link to="/">Home</router-link>
       </li>
+      <li>
+        <router-link to="/todo">TodoList</router-link>
+      </li>
     </ul>
   </header>
 </template>
 
 <script>
-
-
-
+export default {
+  name: 'KiszHeader'
+}
 </script>
 
 
 <style lang="scss" scoped>
+$headerBgColor: #123456;
+$white: #fff;
+
   header {
       text-align: center;
-      background: plum;
+      background: $headerBgColor;
+      color: $white;
   }
   
   .title {
@@ -39,6 +46,11 @@
 
     li {
       padding: 0 1rem;
+    }
+
+    a {
+      text-decoration: none;
+      color: $white;
     }
   }
 </style>
