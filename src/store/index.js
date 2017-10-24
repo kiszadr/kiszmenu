@@ -1,6 +1,8 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import * as Firebase from 'firebase'
+import Es6Promise from 'es6-promise'
+Es6Promise.polyfill()
 
 Vue.use(Vuex)
 
@@ -24,7 +26,8 @@ const store = new Vuex.Store({
     limit: 10,
     limitedListVisibility: true,
     loaded: false,
-    searchedMenu: ''
+    searchedMenu: '',
+    todosLoaded: false
   },
 
   mutations: {
@@ -45,11 +48,19 @@ const store = new Vuex.Store({
     SET_SHOW_MENU (state, menuKey) {
       Vue.set(state, 'showMenu', state.activeMenu[menuKey])
     },
+
     SET_CURRENT_MENU_IMAGE (state, url) {
       Vue.set(state.showMenu, 'image', url)
     },
+
     LIMITED_LIST_VISIBILITY (state, bool) {
       state.limitedListVisibility = bool
+    },
+
+    TODOS_FROM_FIREBASE (state, todos) {
+      console.log('todos', todos)
+      state.todos = todos
+      state.todosLoaded = true
     }
   },
 
@@ -83,6 +94,27 @@ const store = new Vuex.Store({
           context.commit('MENUS_FROM_FIREBASE', menu.val())
           resolve()
         })
+      })
+    },
+
+    getTodoList (context) {
+      return new Promise((resolve) => {
+        const todoList = Firebase.database().ref('todoList')
+
+        todoList.once('value', (list) => {
+          const todos = list.val()
+          context.commit('TODOS_FROM_FIREBASE', todos)
+          resolve(todos)
+        })
+      })
+    },
+
+    setTodoList (context, list) {
+      console.log('vuex set', list)
+      return new Promise((resolve) => {
+        Firebase.database().ref('todoList').set(list)
+        // przydaloby sie jakies potwierdzenie
+        resolve()
       })
     },
 

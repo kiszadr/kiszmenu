@@ -1,6 +1,6 @@
 <template>
   <div class="app__menu">
-    <h3> Ostatnio dodane2 </h3>
+    <h3> Ostatnio dodane </h3>
     <ul class="app__menuList">
       <li>
         <label for="menusList"> search input </label>
