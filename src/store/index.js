@@ -16,7 +16,7 @@ const store = new Vuex.Store({
       {id: 3, name: 'Closed', threads: []}
     ],
     activeThread: null,
-    activeMenu: {},
+    activeMenuList: {},
     showMenu: {
       title: '',
       description: '',
@@ -27,7 +27,9 @@ const store = new Vuex.Store({
     limitedListVisibility: true,
     loaded: false,
     searchedMenu: '',
-    todosLoaded: false
+    todos: [],
+    todosLoaded: false,
+    lastMenuListKey: ''
   },
 
   mutations: {
@@ -39,14 +41,39 @@ const store = new Vuex.Store({
       if (!state.loaded) {
         state.loaded = true
       }
-      Vue.set(state, 'activeMenu', {})
-      Object.keys(payload).map((item) => {
-        Vue.set(state.activeMenu, item, payload[item])
+      // value w firebase zwraca cala tablice, dlatego trzeba wyczyscic obiekt
+      // @todo podpiac event childAdded
+      // https://firebase.google.com/docs/database/admin/retrieve-data#child-added
+      // Vue.set(state, 'activeMenuList', {})
+
+      Object.keys(payload).reverse().map((item, index) => {
+        // przez to ze menu dodawane sa na koncu, pozniej jest revert, wiec ostatnim
+        // widocznym elementem jest wlasciwie pierwszy w tablicy
+        // if (index === 0) {
+        state.lastMenuListKey = item
+        console.log(payload[item].title)
+        // }
+        Vue.set(state.activeMenuList, item, payload[item])
       })
+
+      /*
+      const bufforObject = {}
+      Object.keys(payload).map((item, index) => {
+        console.log('Object.keys(payload)', item)
+        // przez to ze menu dodawane sa na koncu, pozniej jest revert, wiec ostatnim
+        // widocznym elementem jest wlasciwie pierwszy w tablicy
+        if (index === 0) {
+          state.lastMenuListKey = item
+        }
+        Vue.set(bufforObject, item, payload[item])
+      })
+
+      state.activeMenuList = Object.assign(state.activeMenuList, bufforObject)
+      */
     },
 
-    SET_SHOW_MENU (state, menuKey) {
-      Vue.set(state, 'showMenu', state.activeMenu[menuKey])
+    SET_SHOW_MENU (state, menu) {
+      Vue.set(state, 'showMenu', menu)
     },
 
     SET_CURRENT_MENU_IMAGE (state, url) {
@@ -58,9 +85,12 @@ const store = new Vuex.Store({
     },
 
     TODOS_FROM_FIREBASE (state, todos) {
-      console.log('todos', todos)
       state.todos = todos
       state.todosLoaded = true
+    },
+
+    FIREBASE_IS_LOADED (state, bool) {
+      state.loaded = bool
     }
   },
 
@@ -77,6 +107,7 @@ const store = new Vuex.Store({
       return new Promise((resolve, reject) => {
         const kiszmenu = Firebase.database().ref('kiszmenu')
         try {
+          // zeby dodac na gore listy trzeba uzyc unshift
           kiszmenu.push(payload)
         } catch (err) {
           reject(err)
@@ -86,52 +117,78 @@ const store = new Vuex.Store({
     },
 
     getMenus (context) {
+      context.commit('FIREBASE_IS_LOADED', false)
       return new Promise((resolve) => {
         const kiszmenu = Firebase.database().ref('kiszmenu')
-
+        kiszmenu.orderByKey().limitToLast(5).once('value', (menu) => {
+          console.log('testujemy pobieranie 3 elementow')
+          context.commit('MENUS_FROM_FIREBASE', menu.val())
+          resolve()
+        })
         // listener wylapuje dodanie do firebase, wiec wystarczy tylko tu robic mutacje
-        kiszmenu.on('value', (menu) => {
+        // minus taki, ze zwraca wszystko co jest w tablicy
+        // @todo przerobienie na zakresy
+        // https://firebase.google.com/docs/database/admin/retrieve-data#section-queries
+        // kiszmenu.on('value', (menu) => {
+        //   context.commit('MENUS_FROM_FIREBASE', menu.val())
+        //   resolve()
+        // })
+      })
+    },
+
+    getMoreMenus (context) {
+      return new Promise((resolve) => {
+        const kiszmenu = Firebase.database().ref('kiszmenu')
+        kiszmenu.orderByKey().endAt(context.state.lastMenuListKey).limitToLast(6).once('value', (menu) => {
           context.commit('MENUS_FROM_FIREBASE', menu.val())
           resolve()
         })
       })
     },
 
+    showMenu (context, menuKey) {
+      if (context.state.activeMenuList.hasOwnProperty(menuKey)) {
+        context.commit('SET_SHOW_MENU', context.state.activeMenuList[menuKey])
+      } else {
+        context.commit('FIREBASE_IS_LOADED', false)
+        Firebase.database().ref('kiszmenu').child(menuKey).once('value', function (menu) {
+          context.commit('MENUS_FROM_FIREBASE', menu.val())
+          context.commit('SET_SHOW_MENU', menu.val())
+        })
+      }
+    },
+
     getTodoList (context) {
       return new Promise((resolve) => {
-        const todoList = Firebase.database().ref('todoList')
+        if (context.state.todos.length > 0) {
+          resolve(context.state.todos)
+        } else {
+          const todoList = Firebase.database().ref('todoList')
 
-        todoList.once('value', (list) => {
-          const todos = list.val()
-          context.commit('TODOS_FROM_FIREBASE', todos)
-          resolve(todos)
-        })
+          todoList.once('value', (list) => {
+            const todos = list.val()
+            context.commit('TODOS_FROM_FIREBASE', todos)
+            resolve(todos)
+          })
+        }
       })
     },
 
     setTodoList (context, list) {
-      console.log('vuex set', list)
-      return new Promise((resolve) => {
-        Firebase.database().ref('todoList').set(list)
-        // przydaloby sie jakies potwierdzenie
-        resolve()
-      })
-    },
-
-    showMenu (context, menuKey) {
-      context.dispatch('getMenus').then(() => {
-        context.commit('SET_SHOW_MENU', menuKey)
+      return new Promise((resolve, reject) => {
+        Firebase.database().ref('todoList').set(list).then(() => {
+          resolve()
+        },
+        (err) => {
+          reject(err)
+        })
       })
     }
   },
 
   getters: {
     activeMenuGetter: (state, getters) => {
-      return state.limitedListVisibility ? getters.activeMenus.slice(0, state.limit) : getters.activeMenus
-    },
-
-    activeMenus: (state, getters) => {
-      return getters.limitedSearchedMenus.length > 0 ? getters.limitedSearchedMenus.reverse() : Object.keys(state.activeMenu).reverse()
+      return getters.limitedSearchedMenus.length > 0 ? getters.limitedSearchedMenus.reverse() : Object.keys(state.activeMenuList)
     },
 
     limitedSearchedMenus: (state, getters) => {
@@ -142,7 +199,7 @@ const store = new Vuex.Store({
     },
 
     searchedMenu: state => {
-      return state.searchedMenu === '' ? [] : Object.keys(state.activeMenu).filter((key) => state.activeMenu[key].title.toLowerCase().match(state.searchedMenu, 'i'))
+      return state.searchedMenu === '' ? [] : Object.keys(state.activeMenuList).filter((key) => state.activeMenuList[key].title.toLowerCase().match(state.searchedMenu, 'i'))
     }
   }
 })

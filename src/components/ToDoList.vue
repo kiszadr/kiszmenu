@@ -1,5 +1,5 @@
 <template>
-  <div class="todos" style="padding-bottom: 20px;" v-if="$store.state.todosLoaded">
+  <div class="todos" v-if="$store.state.todosLoaded">
     <ConfirmMessage
       :confirmMessage="confirmMessage"
     >
@@ -7,8 +7,9 @@
     <button class="todos__mainButton" @click="editList" v-if="!isEdited"> edit list </button>
     <button class="todos__mainButton" @click="discardChanges" v-else> discard changes </button>
     
-    <ol v-if="!isEdited">
+    <ol class="todos__list" v-if="!isEdited">
       <li
+        class="todos__item"
         v-for="(current_todo, index) in current_todo"
         @click.self="markAsBought(index, current_todo.id, current_todo.bought)"
         :class="{ bought: current_todo.bought }"
@@ -17,8 +18,12 @@
         {{ current_todo.text }}
       </li>
     </ol>
-    <ol v-else>
-      <li v-for="(todo, index) in todos" :key="`${todo}-${index}`">
+    <ol v-else class="todos__list edit">
+      <li
+        class="todos__item"
+        v-for="(todo, index) in todos" 
+        :key="`${todo}-${index}`"
+      >
         {{ todo.text }}
         <button @click="removeFromList(todo)"> remove </button>
         <button @click="moveUp(index)" v-if="index > 0"> up </button>
@@ -27,7 +32,7 @@
     </ol>
       
     <input placeholder="put the value" style="margin-bottom: 20px; outline:none;" class="w3-input" v-model="message" v-on:keyup.enter="addToTodolist" v-if="isEdited">
-    
+    <button class="todos__mainButton" @click="addToTodolist" v-if="isEdited"> add to list </button>
     <button class="todos__mainButton" @click="hideBought" v-if="!isEdited"> hide bought </button>
     <button class="todos__mainButton" @click="clearList" v-if="isEdited"> clear list </button>
     <button class="todos__mainButton" @click="reset" v-if="isEdited"> reset changes </button>
@@ -36,7 +41,7 @@
     <button class="todos__mainButton" @click="editList" v-if="isEdited"> close edition </button>
   </div>
   <Loader v-else>
-    <h3> ładuję listę </h3>
+    <h6> ładuję listę </h6>
   </Loader>
 </template>
 
@@ -54,17 +59,14 @@ export default {
       message: '',
       isEdited: false,
       boughtWasHidden: false,
-      test: 'tescik',
-      confirmMessage: 'gosciu udalo sie!!!!!! :)'
+      confirmMessage: ''
     }
   },
 
   created () {
     this.$store.dispatch('getTodoList').then((todos) => {
-      console.log('todos list', todos)
       let current = []
       for (const todo in todos) {
-        console.log('todo in created', todo)
         if (todos[todo] !== '') {
           current.push({
             text: todos[todo],
@@ -142,7 +144,6 @@ export default {
     },
 
     markAsBought (index, id, bought) {
-      console.log(index, id, bought)
       if (!this.isEdited) {
         Vue.set(this.todos[id], 'bought', !bought)
         Vue.set(this.current_todo[index], 'bought', !bought)
@@ -160,11 +161,13 @@ export default {
       this.boughtWasHidden = true
       this.current_todo = this.todos.filter(value => !value.bought)
     },
+
     moveUp (index) {
       let current = [this.todos[index]]
       let previous = [this.todos[index - 1]]
       this.todos = this.todos.slice(0, index - 1).concat(current).concat(previous).concat(this.todos.slice(index + 1))
     },
+
     moveDown (index) {
       let current = [this.todos[index]]
       let next = [this.todos[index + 1]]
@@ -180,9 +183,63 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+  $todo-main-1: #123456;
+  $todo-main-2: plum;
+  $todo-text-hover: #fff;
+  $todo-font-size: 32px;
+
   .todos {
-    .bought{
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: auto;
+
+    // got from w3 stylesheet
+    .todos__mainButton {
+      border: none;
+      display: inline-block;
+      outline: 0;
+      padding: 6px 16px;
+      vertical-align: middle;
+      overflow: hidden;
+      text-decoration: none!important;
+      color: #fff;
+      background-color: #000;
+      text-align: center;
+      cursor: pointer;
+      white-space: nowrap;
+      user-select: none;
+      transition: background-color .25s,color .15s,box-shadow .15s,opacity .25s,filter .25s,border .15s;
+      -webkit-appearance: button;
+      text-transform: none;
+      margin: 0 0 1rem;
+    }
+
+    .todos__list {
+      list-style-type: none;
+      padding: 0;
+      margin: 0 0 1rem;
+      width: 100%;
+
+      .todos__item {
+        border-bottom: 2px solid $todo-main-1;
+        cursor: pointer;
+        height: $todo-font-size;
+        min-width: 150px;
+        max-width: 100%;
+        line-height: $todo-font-size;
+
+        &:hover {
+          // box-sizing: border-box;
+          border-bottom: 2px solid $todo-main-2;
+        }
+      }
+    }
+    .bought { //JS
       text-decoration: line-through;
+      // background-color: $todo-main-1;
+      // color: $todo-text-hover;
     }
   }
 </style>

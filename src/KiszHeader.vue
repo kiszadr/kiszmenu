@@ -1,21 +1,25 @@
 <template>
   <header>
     <h1 class="title"> kiszmenu </h1>
-    <ul v-if="$store.state.loaded">
+    <ul>
       <li>
-        <router-link to="/add">Go to Add</router-link>
+        <router-link to="/" :class="{'current' : $route.fullPath === '/'}">Home</router-link>
       </li>
       <li>
-        <router-link to="/">Home</router-link>
+        <router-link to="/menus" :class="{'current' : $route.fullPath === '/menus'}">Menus</router-link>
       </li>
       <li>
-        <router-link to="/todo">TodoList</router-link>
+        <router-link to="/add" :class="{'current' : $route.fullPath === '/add'}">Go to Add</router-link>
+      </li>
+      <li>
+        <router-link to="/todo" :class="{'current' : $route.fullPath === '/todo'}">TodoList</router-link>
       </li>
     </ul>
   </header>
 </template>
 
 <script>
+
 export default {
   name: 'KiszHeader'
 }
@@ -51,6 +55,10 @@ $white: #fff;
     a {
       text-decoration: none;
       color: $white;
+    }
+
+    .current {
+      color: plum;
     }
   }
 </style>

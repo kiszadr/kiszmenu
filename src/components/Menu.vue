@@ -11,12 +11,13 @@
     <p> {{ currentMenuDescription }} </p>
   </div>
   <Loader v-else>
-    <h3> ładuję menu </h3>
+    <h6> ładuję menu </h6>
   </Loader>
 </template>
 
 <script>
 import Loader from './partials/Loader'
+import NoPhoto from '../assets/noPhoto.png'
 
 export default {
   name: 'Menu',
@@ -34,8 +35,10 @@ export default {
       return this.$store.state.showMenu.description
     },
     currentMenuImage () {
-      const emptyImage = 'https://hash.fm/resources/source/85752/image'
-      return this.$store.state.showMenu.image ? this.$store.state.showMenu.image : emptyImage
+      if (this.currentMenuTitle && this.currentMenuDescription) {
+        return this.$store.state.showMenu.image ? this.$store.state.showMenu.image : NoPhoto
+      }
+      return ''
     }
   },
 

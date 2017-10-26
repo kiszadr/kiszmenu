@@ -3,8 +3,6 @@
     <KiszHeader>
     </KiszHeader>
     <div class="app__body">
-      <MenuList v-if="$store.state.loaded">
-      </MenuList>
       <div class="app__router">
         <router-view>
         </router-view>
@@ -15,14 +13,14 @@
 
 <script>
 import KiszHeader from './KiszHeader'
-import MenuList from './components/MenuList'
 
 export default {
   name: 'app',
 
-  created () {
-    this.$store.dispatch('getMenus')
-  },
+  // created () {
+    // if (this.$route.name !== 'TodoList') {
+    // this.$store.dispatch('getMenus')
+  // },
 
   methods: {
     setCurrentMenu (key) {
@@ -34,8 +32,7 @@ export default {
     }
   },
   components: {
-    KiszHeader,
-    MenuList
+    KiszHeader
   }
 }
 </script>
@@ -51,6 +48,8 @@ export default {
   
   .app__body {
     display: flex;
+    max-width: 1000px;
+    margin: auto;
   }
 
   .app__router {

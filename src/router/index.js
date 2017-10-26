@@ -4,6 +4,7 @@ import Welcome from '@/components/Welcome'
 import Add from '@/components/Add'
 import Menu from '@/components/Menu'
 import ToDoList from '@/components/ToDoList'
+import MenuList from '@/components/MenuList'
 
 Vue.use(Router)
 
@@ -28,6 +29,11 @@ export default new Router({
       path: '/todo/',
       name: 'TodoList',
       component: ToDoList
+    },
+    {
+      path: '/menus/',
+      name: 'MenuList',
+      component: MenuList
     }
   ]
 })
