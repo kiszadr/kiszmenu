@@ -26,8 +26,6 @@ export default {
   name: 'Add',
   data () {
     return {
-      addDescription: '',
-      msg: 'Welcome to Your Vue.js App',
       message: '',
       title: '',
       image: '',

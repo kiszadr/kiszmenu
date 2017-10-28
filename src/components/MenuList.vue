@@ -1,11 +1,11 @@
 <template>
   <div class="app__menus" >
     <h3> Dostępne menu </h3>
-    <ul class="app__menusList"  v-if="$store.state.loaded">
-      <li class="app__menusSearch">
-        <label for="menusList"></label>
-        <input id="menusList" placeholder="wyszukaj" type="text" name="szukaj" v-model="searchMenu"/>
-      </li>
+    <div class="app__menusSearch">
+      <label for="menusList"></label>
+      <input id="menusList" placeholder="wyszukaj" type="text" name="szukaj" v-model="searchMenu"/>
+    </div>
+    <transition-group name="app__menusList" class="app__menusList" v-if="$store.state.loaded" tag="ul">
       <li class="app__menusItem" v-for="key in $store.getters.activeMenuGetter"
         :class="{'active' : $route.params.key === key }"
         :key="$store.state.activeMenuList[key].title"
@@ -18,14 +18,14 @@
         />
         <p class="app__itemTitle"> {{ $store.state.activeMenuList[key].title }} </p>
       </li>
-      <li
-        v-if="!getMenusFromFirebase"
-        class="app__showAllMenus"
-        @click="getMoreMenus"
-      >
-        pokaż więcej
-      </li>
-    </ul>
+    </transition-group>
+    <div
+      v-if="!getMenusFromFirebase"
+      class="app__showAllMenus"
+      @click="getMoreMenus"
+    >
+      pokaż więcej
+    </div>
     <Loader v-if="!$store.state.loaded || getMenusFromFirebase">
       <h6> ładuję, proszę czekać </h6>
     </Loader>
@@ -47,7 +47,9 @@ export default {
   },
 
   created () {
-    this.$store.dispatch('getMenus')
+    if (this.$store.getters.activeMenuGetter.length === 0) {
+      this.$store.dispatch('getMenus')
+    }
   },
 
   watch: {
@@ -89,6 +91,14 @@ export default {
       list-style-type: none;
     }
 
+    .app__menusList-enter-active, .app__menusList-leave-active {
+      transition: all 1s;
+    }
+    .app__menusList-enter, .app__menusList-leave-to /* .list-leave-active below version 2.1.8 */ {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+
     .app__menusSearch {
       margin-bottom: 1rem;
       display: flex;
@@ -116,7 +126,7 @@ export default {
       display: flex;
       // text-align: left;
       height: $menuItemHeight;
-      line-height: $menuItemHeight;
+      // line-height: $menuItemHeight;
       border-bottom: 1px solid $menusBgHoverColor;
       cursor: pointer;
       padding: 10px;
@@ -137,12 +147,16 @@ export default {
 
       p {
         margin: 0;
-        line-height: 100px;
+        // line-height: 100px;
       }
 
       .app__itemTitle {
         width: 100%;
-        text-align: center;
+        display: flex;
+        white-space: normal;
+        max-width: 100%;
+        align-items: center;
+        justify-content: center;
       }
     }
 

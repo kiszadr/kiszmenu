@@ -35,7 +35,7 @@ export default {
       return this.$store.state.showMenu.description
     },
     currentMenuImage () {
-      if (this.currentMenuTitle && this.currentMenuDescription) {
+      if (this.currentMenuTitle) {
         return this.$store.state.showMenu.image ? this.$store.state.showMenu.image : NoPhoto
       }
       return ''

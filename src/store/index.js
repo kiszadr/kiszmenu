@@ -41,35 +41,10 @@ const store = new Vuex.Store({
       if (!state.loaded) {
         state.loaded = true
       }
-      // value w firebase zwraca cala tablice, dlatego trzeba wyczyscic obiekt
-      // @todo podpiac event childAdded
-      // https://firebase.google.com/docs/database/admin/retrieve-data#child-added
-      // Vue.set(state, 'activeMenuList', {})
-
       Object.keys(payload).reverse().map((item, index) => {
-        // przez to ze menu dodawane sa na koncu, pozniej jest revert, wiec ostatnim
-        // widocznym elementem jest wlasciwie pierwszy w tablicy
-        // if (index === 0) {
         state.lastMenuListKey = item
-        console.log(payload[item].title)
-        // }
         Vue.set(state.activeMenuList, item, payload[item])
       })
-
-      /*
-      const bufforObject = {}
-      Object.keys(payload).map((item, index) => {
-        console.log('Object.keys(payload)', item)
-        // przez to ze menu dodawane sa na koncu, pozniej jest revert, wiec ostatnim
-        // widocznym elementem jest wlasciwie pierwszy w tablicy
-        if (index === 0) {
-          state.lastMenuListKey = item
-        }
-        Vue.set(bufforObject, item, payload[item])
-      })
-
-      state.activeMenuList = Object.assign(state.activeMenuList, bufforObject)
-      */
     },
 
     SET_SHOW_MENU (state, menu) {
@@ -91,6 +66,14 @@ const store = new Vuex.Store({
 
     FIREBASE_IS_LOADED (state, bool) {
       state.loaded = bool
+    },
+
+    MENU_CHILD_ADDED (state, newMenu) {
+      let menuObj = {}
+      menuObj[newMenu.key] = newMenu.details
+      const newActiveMenuList = Object.assign(menuObj, state.activeMenuList)
+
+      Vue.set(state, 'activeMenuList', newActiveMenuList)
     }
   },
 
@@ -107,7 +90,6 @@ const store = new Vuex.Store({
       return new Promise((resolve, reject) => {
         const kiszmenu = Firebase.database().ref('kiszmenu')
         try {
-          // zeby dodac na gore listy trzeba uzyc unshift
           kiszmenu.push(payload)
         } catch (err) {
           reject(err)
@@ -121,18 +103,20 @@ const store = new Vuex.Store({
       return new Promise((resolve) => {
         const kiszmenu = Firebase.database().ref('kiszmenu')
         kiszmenu.orderByKey().limitToLast(5).once('value', (menu) => {
-          console.log('testujemy pobieranie 3 elementow')
           context.commit('MENUS_FROM_FIREBASE', menu.val())
+          context.dispatch('addChildAddedListener', kiszmenu)
           resolve()
         })
-        // listener wylapuje dodanie do firebase, wiec wystarczy tylko tu robic mutacje
-        // minus taki, ze zwraca wszystko co jest w tablicy
-        // @todo przerobienie na zakresy
-        // https://firebase.google.com/docs/database/admin/retrieve-data#section-queries
-        // kiszmenu.on('value', (menu) => {
-        //   context.commit('MENUS_FROM_FIREBASE', menu.val())
-        //   resolve()
-        // })
+      })
+    },
+
+    addChildAddedListener (context, firebase) {
+      firebase.limitToLast(1).on('child_added', (menu, prevChildKey) => {
+        const newMenu = {
+          key: menu.key,
+          details: menu.val()
+        }
+        context.commit('MENU_CHILD_ADDED', newMenu)
       })
     },
 
