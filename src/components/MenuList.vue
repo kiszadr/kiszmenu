@@ -13,14 +13,14 @@
         @click="setCurrentMenu(key)"
       >
         <img class="app__itemImage"
-          :src="$store.state.activeMenuList[key].image || emptyImage"
+          :src="$store.state.activeMenuList[key].imageSmall || $store.state.activeMenuList[key].image || emptyImage"
           :alt="'menu image'"
         />
         <p class="app__itemTitle"> {{ $store.state.activeMenuList[key].title }} </p>
       </li>
     </transition-group>
     <div
-      v-if="!getMenusFromFirebase"
+      v-if="!getMenusFromFirebase && $store.state.loaded"
       class="app__showAllMenus"
       @click="getMoreMenus"
     >

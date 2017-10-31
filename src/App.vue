@@ -47,13 +47,8 @@ export default {
   color: #2c3e50;
   
   .app__body {
-    display: flex;
     max-width: 1000px;
     margin: auto;
-  }
-
-  .app__router {
-    flex: 4;
   }
 }
 </style>

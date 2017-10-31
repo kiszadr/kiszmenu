@@ -75,6 +75,8 @@ export default {
           })
         }
       }
+
+      // @todo current_todo zastapic na this.$store.state.todos
       this.todos = [...current]
       this.current_todo = [...current]
     })

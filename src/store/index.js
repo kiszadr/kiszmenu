@@ -9,19 +9,14 @@ Vue.use(Vuex)
 const store = new Vuex.Store({
   state: {
     isSignedIn: false,
-    columns: [
-      {id: 0, name: 'New', threads: []},
-      {id: 1, name: 'Needs attention', threads: []},
-      {id: 2, name: 'Waiting for answer', threads: []},
-      {id: 3, name: 'Closed', threads: []}
-    ],
-    activeThread: null,
+    user: 'kiszadr',
     activeMenuList: {},
     showMenu: {
       title: '',
       description: '',
       image: ''
     },
+    menuLoaded: false,
     currentMenuKey: '',
     limit: 10,
     limitedListVisibility: true,
@@ -51,8 +46,8 @@ const store = new Vuex.Store({
       Vue.set(state, 'showMenu', menu)
     },
 
-    SET_CURRENT_MENU_IMAGE (state, url) {
-      Vue.set(state.showMenu, 'image', url)
+    SHOW_MENU_IS_LOADED (state, bool) {
+      state.menuLoaded = bool
     },
 
     LIMITED_LIST_VISIBILITY (state, bool) {
@@ -60,7 +55,18 @@ const store = new Vuex.Store({
     },
 
     TODOS_FROM_FIREBASE (state, todos) {
-      state.todos = todos
+      if (state.todos.length) {
+        let current = []
+
+        for (let i = 0, l = todos.length; i < l; i += 1) {
+          current.push({
+            text: todos[i],
+            bought: false,
+            id: i
+          })
+        }
+        state.todos = [...current]
+      }
       state.todosLoaded = true
     },
 
@@ -90,11 +96,24 @@ const store = new Vuex.Store({
       return new Promise((resolve, reject) => {
         const kiszmenu = Firebase.database().ref('kiszmenu')
         try {
-          kiszmenu.push(payload)
+          kiszmenu.push(payload).then((status) => {
+            resolve(status)
+          })
         } catch (err) {
           reject(err)
         }
-        resolve()
+      })
+    },
+
+    updateFirebaseChild (context, payload) {
+      return new Promise((resolve, reject) => {
+        const childKey = payload.key
+        const childMenu = payload.menu
+        Firebase.database().ref('kiszmenu').child(childKey).set(childMenu).then(() => {
+          resolve()
+        }, (err) => {
+          reject(err)
+        })
       })
     },
 
@@ -133,11 +152,13 @@ const store = new Vuex.Store({
     showMenu (context, menuKey) {
       if (context.state.activeMenuList.hasOwnProperty(menuKey)) {
         context.commit('SET_SHOW_MENU', context.state.activeMenuList[menuKey])
+        context.commit('SHOW_MENU_IS_LOADED', true)
       } else {
-        context.commit('FIREBASE_IS_LOADED', false)
+        context.commit('SHOW_MENU_IS_LOADED', false)
         Firebase.database().ref('kiszmenu').child(menuKey).once('value', function (menu) {
-          context.commit('MENUS_FROM_FIREBASE', menu.val())
+          // context.commit('MENUS_FROM_FIREBASE', menu.val())
           context.commit('SET_SHOW_MENU', menu.val())
+          context.commit('SHOW_MENU_IS_LOADED', true)
         })
       }
     },

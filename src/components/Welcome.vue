@@ -13,6 +13,17 @@ export default {
       msg: 'Welcome to kiszmenu App'
     }
   }
+
+  // created () {
+  //   fetch('setValues.php').then((response) => {
+  //     // console.log('response', response, response.json(), response.arrayBuffer(), response.blob())
+  //     return response.json()
+  //   }).then((myBlob) => {
+  //   // const objectURL = URL.createObjectURL(myBlob)
+  //   // myImage.src = objectURL;
+  //     console.log('wellcome setValues resp', myBlob)
+  //   })
+  // },
 }
 </script>
 

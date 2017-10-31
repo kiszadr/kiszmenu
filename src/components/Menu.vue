@@ -1,5 +1,5 @@
 <template>
-  <div class="menu" v-if="$store.state.loaded">
+  <div class="menu" v-if="$store.state.menuLoaded">
     <h2> {{ currentMenuTitle }}</h2>
     <!-- <div v-if="currentMenuImage.length > 0" :style="`background-image: url(${currentMenuImage}); width: 100px; height: 100px;`"> -->
     <div v-if="currentMenuImage.length > 0">
