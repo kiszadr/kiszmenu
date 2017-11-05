@@ -12,8 +12,8 @@ $request['status'] = 200;
 $request['text'] = '';
 $request['type'] = $imageFileType;
 
-$check = getimagesize($_FILES["fileToUpload"]["tmp_name"]);
-if($check === false) {
+$imageDimensions = getimagesize($_FILES["fileToUpload"]["tmp_name"]);
+if($imageDimensions === false) {
     $uploadOk = 0;
     $request['text'] = $request['text'] . " Sorry, file is not an image.";
 }
@@ -42,27 +42,31 @@ if ($uploadOk === 0) {
     $request['status'] = 300;
 // if everything is ok, try to upload file
 } else {
-  $target_file_small = $target_dir . basename($_POST["customName"]) . '_small.' . $imageFileType;
-  list($width, $height) = getimagesize($_FILES["fileToUpload"]["tmp_name"]);
-  createSmallImage ($_FILES["fileToUpload"]["tmp_name"], $target_file_small, $width, $height, $imageFileType);
-
     if (move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $target_file)) {
-        // echo "https://serwer1738894.home.pl/uploads/" . $_POST["customName"] . '/' . $_POST["customName"] . '.' . $imageFileType;
         $request['status'] = 200;
         $request['text'] = "ok";
         $request['image'] = "https://serwer1738894.home.pl/uploads/" . $_POST["customName"] . '/' . $_POST["customName"] . '.' . $imageFileType;
         $request['imageSmall'] = "https://serwer1738894.home.pl/uploads/" . $_POST["customName"] . '/' . $_POST["customName"] . '_small.' . $imageFileType;
+        $request['imageMedium'] = "https://serwer1738894.home.pl/uploads/" . $_POST["customName"] . '/' . $_POST["customName"] . '_medium.' . $imageFileType;
+        echo json_encode($request);
+
+        $target_file_small = $target_dir . basename($_POST["customName"]) . '_small.' . $imageFileType;
+        $target_file_medium = $target_dir . basename($_POST["customName"]) . '_medium.' . $imageFileType;
+        list($width, $height) = $imageDimensions;
+        createSmallImage ($target_file, $target_file_small, $width, $height, $imageFileType, 420);
+        createSmallImage ($target_file, $target_file_medium, $width, $height, $imageFileType, 1024);  
+
     } else {
         $request['status'] = 300;
         $request['text'] = $request['text'] . "Sorry, error due to save.";
+        echo json_encode($request);
     }
+    
 }
 
-echo json_encode($request);
-
-function createSmallImage($src, $dst, $width_orig, $height_orig, $type) {
-  $new_width = 200;
-  $new_height = 200;
+function createSmallImage($src, $dst, $width_orig, $height_orig, $type, $dimension) {
+  $new_width = $dimension;
+  $new_height = $dimension;
 
   $ratio_orig = $width_orig/$height_orig;
   

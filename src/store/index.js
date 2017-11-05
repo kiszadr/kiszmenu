@@ -24,7 +24,10 @@ const store = new Vuex.Store({
     searchedMenu: '',
     todos: [],
     todosLoaded: false,
-    lastMenuListKey: ''
+    lastMenuListKey: '',
+    moreMenusClickCounter: 0,
+    currentMenusShown: 5,
+    getNewMenusCounter: 6
   },
 
   mutations: {
@@ -37,8 +40,10 @@ const store = new Vuex.Store({
         state.loaded = true
       }
       Object.keys(payload).reverse().map((item, index) => {
-        state.lastMenuListKey = item
-        Vue.set(state.activeMenuList, item, payload[item])
+        if (payload[item].title && !state.activeMenuList[item]) {
+          state.lastMenuListKey = item
+          Vue.set(state.activeMenuList, item, payload[item])
+        }
       })
     },
 
@@ -75,11 +80,18 @@ const store = new Vuex.Store({
     },
 
     MENU_CHILD_ADDED (state, newMenu) {
-      let menuObj = {}
-      menuObj[newMenu.key] = newMenu.details
-      const newActiveMenuList = Object.assign(menuObj, state.activeMenuList)
+      if (!state.activeMenuList[newMenu.key]) {
+        let menuObj = {}
+        menuObj[newMenu.key] = newMenu.details
+        const newActiveMenuList = Object.assign(menuObj, state.activeMenuList)
 
-      Vue.set(state, 'activeMenuList', newActiveMenuList)
+        Vue.set(state, 'activeMenuList', newActiveMenuList)
+        state.currentMenusShown += 1
+      }
+    },
+
+    INCREASE_MORE_MENUS_COUNTER (state) {
+      state.moreMenusClickCounter += 1
     }
   },
 
@@ -121,7 +133,7 @@ const store = new Vuex.Store({
       context.commit('FIREBASE_IS_LOADED', false)
       return new Promise((resolve) => {
         const kiszmenu = Firebase.database().ref('kiszmenu')
-        kiszmenu.orderByKey().limitToLast(5).once('value', (menu) => {
+        kiszmenu.orderByKey().limitToLast(context.state.getNewMenusCounter - 1).once('value', (menu) => {
           context.commit('MENUS_FROM_FIREBASE', menu.val())
           context.dispatch('addChildAddedListener', kiszmenu)
           resolve()
@@ -142,8 +154,9 @@ const store = new Vuex.Store({
     getMoreMenus (context) {
       return new Promise((resolve) => {
         const kiszmenu = Firebase.database().ref('kiszmenu')
-        kiszmenu.orderByKey().endAt(context.state.lastMenuListKey).limitToLast(6).once('value', (menu) => {
+        kiszmenu.orderByKey().endAt(context.state.lastMenuListKey).limitToLast(context.state.getNewMenusCounter + 1).once('value', (menu) => {
           context.commit('MENUS_FROM_FIREBASE', menu.val())
+          context.commit('INCREASE_MORE_MENUS_COUNTER')
           resolve()
         })
       })
@@ -192,7 +205,11 @@ const store = new Vuex.Store({
   },
 
   getters: {
-    activeMenuGetter: (state, getters) => {
+    showMoreChecker: state => {
+      return Object.keys(state.activeMenuList).length === state.currentMenusShown + state.getNewMenusCounter * state.moreMenusClickCounter
+    },
+
+    activeMenusGetter: (state, getters) => {
       return getters.limitedSearchedMenus.length > 0 ? getters.limitedSearchedMenus.reverse() : Object.keys(state.activeMenuList)
     },
 

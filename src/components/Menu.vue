@@ -36,7 +36,8 @@ export default {
     },
     currentMenuImage () {
       if (this.currentMenuTitle) {
-        return this.$store.state.showMenu.image ? this.$store.state.showMenu.image : NoPhoto
+        const firebaseImg = this.$store.state.showMenu.imageMedium ? this.$store.state.showMenu.imageMedium : this.$store.state.showMenu.image
+        return firebaseImg || NoPhoto
       }
       return ''
     }

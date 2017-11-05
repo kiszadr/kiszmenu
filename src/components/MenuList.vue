@@ -1,40 +1,50 @@
 <template>
-  <div class="app__menus" >
+  <div class="menus" >
+    <div class="menus__loading" v-if="!$store.state.loaded || getMenusFromFirebase"></div>
     <h3> Dostępne menu </h3>
-    <div class="app__menusSearch">
+    <div class="menus__search">
       <label for="menusList"></label>
       <input id="menusList" placeholder="wyszukaj" type="text" name="szukaj" v-model="searchMenu"/>
     </div>
-    <transition-group name="app__menusList" class="app__menusList" v-if="$store.state.loaded" tag="ul">
-      <li class="app__menusItem" v-for="key in $store.getters.activeMenuGetter"
-        :class="{'active' : $route.params.key === key }"
-        :key="$store.state.activeMenuList[key].title"
+    <transition-group name="menus__list" class="menus__list" v-if="$store.state.loaded" tag="ul">
+      <li class="menus__listItem" v-for="(key, index) in $store.getters.activeMenusGetter"
+        :key="key"
         v-if="$store.state.activeMenuList[key].title"
         @click="setCurrentMenu(key)"
+        :id="key"
+        @mouseenter="mouseEnter(index)"
+        @mouseleave="mouseLeave"
       >
-        <img class="app__itemImage"
-          :src="$store.state.activeMenuList[key].imageSmall || $store.state.activeMenuList[key].image || emptyImage"
-          :alt="'menu image'"
-        />
-        <p class="app__itemTitle"> {{ $store.state.activeMenuList[key].title }} </p>
+        <div class="menus__menuWrapper">
+          <div class="menus_menuImageWrapper">
+            <img class="menus__itemImage"
+              :src="$store.state.activeMenuList[key].imageSmall || $store.state.activeMenuList[key].image || emptyImage"
+              :alt="'menu image'"
+            />
+          </div>
+          <transition name="menus__itemTitle">
+            <p v-if="currentHoverIndex !== index" class="menus__itemTitle"> {{ $store.state.activeMenuList[key].title }} </p>
+          </transition>
+        </div>
+      </li>
+      <li class="menus__listItem"
+        :key="'moreMenus'"
+        @click="getMoreMenus"
+        v-if="$store.getters.showMoreChecker"
+      >
+        <div class="menus__menuWrapper">
+          <p class="menus__itemTitle"> pokaż więcej </p>
+          <!-- <img class="menus__addMoreMenusImg" :src="moreMenusButton" /> -->
+        </div>
       </li>
     </transition-group>
-    <div
-      v-if="!getMenusFromFirebase && $store.state.loaded"
-      class="app__showAllMenus"
-      @click="getMoreMenus"
-    >
-      pokaż więcej
-    </div>
-    <Loader v-if="!$store.state.loaded || getMenusFromFirebase">
-      <h6> ładuję, proszę czekać </h6>
-    </Loader>
   </div>
 </template>
 
 <script>
 import Loader from './partials/Loader'
 import NoPhoto from '../assets/noPhoto.png'
+import addImg from '../assets/plus.svg'
 
 export default {
   name: 'menuList',
@@ -42,15 +52,24 @@ export default {
     return {
       searchMenu: this.$store.state.searchedMenu,
       emptyImage: NoPhoto,
-      getMenusFromFirebase: false
+      getMenusFromFirebase: false,
+      moreMenusButton: addImg,
+      moreMenusClickCounter: 0,
+      currentHoverIndex: -1
     }
   },
 
   created () {
-    if (this.$store.getters.activeMenuGetter.length === 0) {
+    if (this.$store.getters.activeMenusGetter.length === 0) {
       this.$store.dispatch('getMenus')
     }
   },
+
+  // mounted () {
+    // todo ustawienie ekranu na ostatnio ogladanym id menu
+  //   console.log('mounted')
+  //   // :class="{'active' : $route.params.key === key }"
+  // },
 
   watch: {
     searchMenu: function (val) {
@@ -59,6 +78,14 @@ export default {
   },
 
   methods: {
+    mouseEnter (index) {
+      this.currentHoverIndex = index
+    },
+
+    mouseLeave () {
+      this.currentHoverIndex = -1
+    },
+
     setCurrentMenu (key) {
       this.$store.dispatch('showMenu', key)
       this.$router.push(`/menu/${key}`)
@@ -66,6 +93,7 @@ export default {
 
     getMoreMenus () {
       this.getMenusFromFirebase = true
+
       this.$store.dispatch('getMoreMenus').then(() => {
         this.getMenusFromFirebase = false
       })
@@ -83,23 +111,46 @@ export default {
   $menusBgHoverColor: #123456;
   $white: #fff;
 
-  .app__menus {
+  .menus {
+    position: relative;
+
+    .menus__loading {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      z-index: 2;
+      background-color: rgba(255, 255, 255, .6);
+    }
     
-    .app__menusList {
-      margin: 0;
+    .menus__list {
+      margin: 0 auto;
       padding: 0;
       list-style-type: none;
+      display: block;
+      max-width: 100%;
+      width: 100%;
     }
 
-    .app__menusList-enter-active, .app__menusList-leave-active {
+    .menus__list-enter-active {
       transition: all 1s;
     }
-    .app__menusList-enter, .app__menusList-leave-to /* .list-leave-active below version 2.1.8 */ {
+    .menus__list-enter {
       opacity: 0;
       transform: translateY(30px);
     }
 
-    .app__menusSearch {
+    .menus__list-leave-to {
+      opacity: 0;
+    }
+    
+    .menus__list-leave-active {
+      transition: all 1s;
+      opacity: 1;
+    }
+
+    .menus__search {
       margin-bottom: 1rem;
       display: flex;
       justify-content: center;
@@ -122,53 +173,64 @@ export default {
       }
     }
 
-    .app__menusItem {
-      display: flex;
-      // text-align: left;
-      height: $menuItemHeight;
-      // line-height: $menuItemHeight;
-      border-bottom: 1px solid $menusBgHoverColor;
+    .menus__listItem {
+      display: inline-block;;
+      height: 300px;
+      width: 300px;
       cursor: pointer;
-      padding: 10px;
       white-space: nowrap;
       box-sizing: border-box;
+      margin: 0.5rem;
+      max-width: 100%;
+      vertical-align: top;
 
-      &:hover,
-      &.active { // JS
-        background-color: $menusBgHoverColor;
-        color: $white;
+      // &:hover {
+      //   background-color: $menusBgHoverColor;
+      //   color: $white;
+      // }
+
+      .menus__menuWrapper {
+        display: flex;
+        height: 100%;
+        flex-direction: column;
+        padding: 10px;
+        box-shadow: 3px 3px 15px $menusBgHoverColor;
+        box-sizing: border-box;
       }
 
-      .app__itemImage {
-        width: 80px;
-        height: 80px;
-        object-fit: contain;
+      .menus_menuImageWrapper {
+        flex: 3;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
       }
 
-      p {
-        margin: 0;
-        // line-height: 100px;
+      .menus__itemImage {
+        object-fit: cover;
+        width: 100%;
+        height: 100%;
       }
 
-      .app__itemTitle {
+      .menus__itemTitle {
         width: 100%;
         display: flex;
         white-space: normal;
         max-width: 100%;
         align-items: center;
         justify-content: center;
+        flex: 1;
+        margin: 0;
       }
-    }
 
-    .app__showAllMenus {
-      height: #{$menuItemHeight / 2};
-      line-height: #{$menuItemHeight / 2};;
-      text-align: center;
-      cursor: pointer;
+      .menus__itemTitle-enter-active,
+      .menus__itemTitle-leave-active {
+        transition: all .5s ease;
+        max-height: 70px;
+      }
 
-      &:hover {
-        background-color: $menusBgHoverColor;
-        color: $white;
+      .menus__itemTitle-enter, .menus__itemTitle-leave-to {
+        max-height: 0px;
+        overflow: hidden;
       }
     }
   }

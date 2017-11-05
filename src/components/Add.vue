@@ -1,6 +1,10 @@
 <template>
   <div class="add">
     <div class="add__loading" v-if="loading"></div>
+    <ConfirmMessage
+      :confirmMessage="confirmMessage"
+    >
+    </ConfirmMessage>
     <h2>Add to menu</h2>
     <label for="addMenuTitle"> Add title </label>
     <input type="text" id="addMenuTitle" placeholder="tytul" v-model="title"/>
@@ -8,21 +12,22 @@
       v-model="message" 
       placeholder="add multiple lines"
     ></textarea>
-    <section v-if="!image">
+    <section v-if="!image" class="add__imageSection">
       <h6>Select an image, only JPG, JPEG, PNG & GIF files are allowed.</h6>
       <div v-if="error"> {{ error }} </div>
       <label for="addFileInput"> Add file </label>
       <input type="file" id="addFileInput" @change="onFileChange"/>
     </section>
-    <section v-else>
+    <section v-else class="add__imageSection">
       <img :src="image" />
-      <button @click="removeImage">Remove image</button>
+      <button @click="removeImage" class="add__removeButton">Remove image</button>
     </section>
-    <button @click="addToBase" type="button"> dodaj obj do firebase </button>
+    <button @click="addToBase" type="button" class="add__addButton"> dodaj obj do firebase </button>
   </div>
 </template>
 
 <script>
+import ConfirmMessage from './partials/ConfirmMessage'
 const FormData = require('form-data')
 
 export default {
@@ -35,7 +40,9 @@ export default {
       error: '',
       files: [],
       newMenuKey: '',
-      loading: false
+      loading: false,
+      loadingImageToPreview: false,
+      confirmMessage: ''
     }
   },
   methods: {
@@ -62,14 +69,19 @@ export default {
             if (this.files && this.files[0]) {
               this.sendFileToServer(status.key).then((resp) => {
                 if (resp.status === 200) {
+                  this.clearAddForm()
                   postData.image = resp.image
                   postData.imageSmall = resp.imageSmall
+                  postData.imageMedium = resp.imageMedium
                   const firebaseChild = {
                     key: status.key,
                     menu: postData
                   }
                   this.$store.dispatch('updateFirebaseChild', firebaseChild).then(() => {
-                    this.clearAddForm()
+                    this.confirmMessage = 'Completed.'
+                    setTimeout(() => {
+                      this.confirmMessage = ''
+                    }, 2000)
                   }, () => {
                     this.loading = false
                     this.error = 'Error due to upload.'
@@ -77,6 +89,9 @@ export default {
                 } else {
                   this.clearAddForm()
                 }
+              }, (err) => {
+                this.loading = false
+                this.error = err
               })
             } else {
               this.clearAddForm()
@@ -103,9 +118,21 @@ export default {
           body: form
         }
         fetch('upload.php', post).then((response) => {
-          return response.json()
+          return response.text()
         }).then((myBlob) => {
-          resolve(myBlob)
+          let request = {}
+          try {
+            request = JSON.parse(myBlob)
+          } catch (err) {
+            request.status = 300
+            request.text = err
+          }
+
+          if (request.status === 200) {
+            resolve(request)
+          } else {
+            reject(request.text)
+          }
         })
       })
     },
@@ -134,6 +161,7 @@ export default {
       }
 
       if (this.files[0].size < 5347738) {
+        this.loadingImageToPreview = true
         this.createImage(this.files[0])
       } else {
         this.error = 'Wrong picture. Max size is 5MB.'
@@ -142,10 +170,11 @@ export default {
 
     createImage (file) {
       const reader = new FileReader()
-      const vm = this
+      // const vm = this
 
       reader.onload = (e) => {
-        vm.image = e.target.result
+        this.image = e.target.result
+        this.loadingImageToPreview = false
       }
       reader.readAsDataURL(file)
     },
@@ -154,6 +183,10 @@ export default {
       this.error = ''
       this.image = ''
     }
+  },
+
+  components: {
+    ConfirmMessage
   }
 }
 </script>
@@ -184,6 +217,11 @@ export default {
     img {
       width: 200px;
       height: auto;
+    }
+
+    .add__imageSection,
+    .add__addButton {
+      margin-bottom: 2rem;
     }
   }
 </style>
