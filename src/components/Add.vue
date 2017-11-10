@@ -1,18 +1,51 @@
 <template>
   <div class="add">
     <div class="add__loading" v-if="loading"></div>
+    <h2>Add to menu</h2>
     <ConfirmMessage
       :confirmMessage="confirmMessage"
     >
     </ConfirmMessage>
-    <h2>Add to menu</h2>
-    <label for="addMenuTitle"> Add title </label>
-    <input type="text" id="addMenuTitle" placeholder="tytul" v-model="title"/>
-    <textarea
-      v-model="message" 
-      placeholder="add multiple lines"
-    ></textarea>
+    <div class="add__title">
+      <label for="addMenuTitle"> Add title </label>
+      <input type="text" id="addMenuTitle" placeholder="tytul" v-model="title"/>
+    </div>
+    <Wysiwyg
+      @wysiwygTextChanged="wysiwygTextChanged"
+    >
+    </Wysiwyg>
+    <section class="add__products">
+      <h3>Lista produktów.</h3>
+      <ol class="add__productList">
+        <li
+          class="add__item"
+          v-for="(product, index) in products"
+          :class="{'drag' : dragIndex === index}"
+          :key="`${product}-${index}`"
+        >
+          <div class="add__itemWrapper">
+            <p
+              :id="index"
+              draggable="true"
+              @drag="startDragging($event, index)"
+              @dragover="dragOver"
+              @drop="stopDragging"
+            > {{ index + 1 }}. {{ product.text }} </p>
+            <div class="add__productsButtons">
+              <img :src="upArrow" class="add__productsImages" @click="moveUp(index)" v-if="index > 0"/>
+              <img :src="downArrow" class="add__productsImages" @click="moveDown(index)" v-if="index < products.length - 1"/>
+              <img :src="trash" class="add__productsImages" @click="removeFromList(index)"/>
+            </div>
+          </div>
+        </li>
+      </ol>
+      <div>
+        <input placeholder="dodaj produkt" style="margin-bottom: 20px; outline:none;" v-model="productInput" v-on:keyup.enter="addToProductsList">
+        <img :src="plusIcon" class="add__addProductButton" @click="addToProductsList"/>
+      </div>
+    </section>
     <section v-if="!image" class="add__imageSection">
+      <h3> Add image </h3>
       <h6>Select an image, only JPG, JPEG, PNG & GIF files are allowed.</h6>
       <div v-if="error"> {{ error }} </div>
       <label for="addFileInput"> Add file </label>
@@ -27,13 +60,24 @@
 </template>
 
 <script>
+import Vue from 'vue'
 import ConfirmMessage from './partials/ConfirmMessage'
+import Wysiwyg from './Wysiwyg'
+import UpArrow from '../assets/arrow-up.svg'
+import DownArrow from '../assets/arrow-down.svg'
+import Trash from '../assets/cross.svg'
+import Plus from '../assets/plus_123456.svg'
 const FormData = require('form-data')
+// let currentDragElement = -1
 
 export default {
   name: 'Add',
   data () {
     return {
+      upArrow: UpArrow,
+      downArrow: DownArrow,
+      trash: Trash,
+      plusIcon: Plus,
       message: '',
       title: '',
       image: '',
@@ -42,27 +86,104 @@ export default {
       newMenuKey: '',
       loading: false,
       loadingImageToPreview: false,
-      confirmMessage: ''
+      confirmMessage: '',
+      productInput: '',
+      products: [
+        {text: '111111'},
+        {text: '222222'},
+        {text: '33333 30%'},
+        {text: '444444'},
+        {text: '555555 przepisu'},
+        {text: '666666'}
+      ],
+      dragIndex: -1,
+      isDragging: false
+      // currentDragElementVue: -1
     }
   },
   methods: {
+    // dragging
+    startDragging (e, index) {
+      this.dragIndex = index
+      this.isDragging = true
+      // this.currentDragElementVue = index
+      // currentDragElement = index
+    },
+
+    dragOver (e) {
+      e.preventDefault()
+      // const targetId = parseInt(e.target.id, 10)
+      // console.log('over0000', targetId, currentDragElement, this.currentDragElementVue)
+      // if (currentDragElement !== targetId) {
+      //   console.log('over11111', targetId, currentDragElement, this.currentDragElementVue)
+      //   // this.setCurrentOrder(currentDragElement, targetId)
+      //   this.setCurrentOrder(targetId, currentDragElement)
+      //   this.dragIndex = targetId
+      //   currentDragElement = targetId
+      //   // this.currentDragElementVue = targetId
+      //   Vue.set(this, 'currentDragElementVue', targetId)
+      //   console.log('over2222', targetId, currentDragElement, this.currentDragElementVue)
+      // }
+    },
+
+    stopDragging (e) {
+      e.preventDefault()
+      const targetId = parseInt(e.target.id, 10)
+
+      if (targetId !== this.dragIndex && this.isDragging) {
+        this.setCurrentOrder(this.dragIndex, targetId)
+      }
+      this.isDragging = false
+      this.dragIndex = -1
+      // currentDragElement = -1
+    },
+
+    setCurrentOrder (dragIndex, targetId) {
+      const buffor = this.products[dragIndex]
+      this.products.splice(dragIndex, 1)
+      this.products.splice(targetId, 0, buffor)
+    },
+  // end dragging
+
+  // products list
+    addToProductsList () {
+      if (this.productInput !== '') {
+        this.products.push({text: this.productInput})
+        this.productInput = ''
+      }
+    },
+
+    removeFromList (index) {
+      Vue.delete(this.products, index)
+    },
+
+    moveUp (index) {
+      let current = [this.products[index]]
+      let previous = [this.products[index - 1]]
+      this.products = this.products.slice(0, index - 1).concat(current).concat(previous).concat(this.products.slice(index + 1))
+    },
+
+    moveDown (index) {
+      let current = [this.products[index]]
+      let next = [this.products[index + 1]]
+      this.products = this.products.slice(0, index).concat(next).concat(current).concat(this.products.slice(index + 2))
+    },
+
+    createEmptyMenu () {
+      return {
+        description: this.message,
+        title: this.title,
+        ingredients: this.products,
+        image: this.image,
+        created: new Date().getTime(),
+        author: this.$store.state.user
+      }
+    },
+
     addToBase () {
       if (this.validateAdd()) {
         this.loading = true
-        let postData = {
-          description: this.message,
-          title: this.title,
-          ingredients: [
-            {
-              name: 'ziemniaki',
-              value: 2.5,
-              unit: 'kg'
-            }
-          ],
-          image: this.image,
-          created: new Date().getTime(),
-          author: this.$store.state.user
-        }
+        let postData = this.createEmptyMenu()
 
         this.$store.dispatch('addToFirebase', postData).then((status) => {
           if (status.key) {
@@ -182,19 +303,54 @@ export default {
     removeImage () {
       this.error = ''
       this.image = ''
+    },
+
+    wysiwygTextChanged (msg) {
+      console.log('wysiwygTextChanged', msg)
+      this.message = msg
     }
   },
 
   components: {
-    ConfirmMessage
+    ConfirmMessage,
+    Wysiwyg
   }
 }
 </script>
 
 
 <style scoped lang='scss'>
+  $gutter-padding: 0.5rem;
+  $gutter-padding-medium: 1rem;
+  $gutter-padding-big: 2rem;
+
   .add {
     position: relative;
+    max-width: 500px;
+    margin: auto;
+
+    h2 {
+      text-align: center;
+    }
+
+    .add__title {
+      margin-bottom: $gutter-padding-medium;
+      padding: 0 $gutter-padding;
+
+      label {
+        display: block;
+        font-size: 0.8rem;
+      }
+
+      input {
+        width: 100%;
+        height: $gutter-padding-big;
+        line-height: $gutter-padding-big;
+        padding: 0 $gutter-padding;
+        box-sizing: border-box;
+      }
+
+    }
 
     .add__loading {
       position: absolute;
@@ -205,13 +361,58 @@ export default {
       z-index: 2;
       background-color: rgba(255, 255, 255, .6);
     }
-    textarea {
-      display: block;
-      height: 200px;
-      max-width: 400px;
+
+    .add__products {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: $gutter-padding;
+    }
+
+    .add__productList {
       width: 100%;
-      margin: 1rem auto;
-      box-sizing: border-box;
+      padding: 0;
+
+      .add__item {
+        height: 42px;
+        line-height: 42px;
+        display: block;
+        user-select: none;
+
+        .add__itemWrapper {
+          display: flex;
+          justify-content: space-between;
+        }
+
+        p {
+          display: inline-block;
+          margin: 0;
+        }
+
+        .add__productsButtons {
+          display: block;
+        }
+
+        .add__productsImages {
+          padding: 8px;
+          width: 24px;
+          height: 24px;
+          vertical-align: middle;
+          cursor: pointer;
+        }
+
+        &.drag {
+          opacity: 0.5;
+        }
+      }
+    }
+
+    .add__addProductButton {
+      padding: 8px;
+      width: 24px;
+      height: 24px;
+      vertical-align: middle;
+      cursor: pointer;
     }
 
     img {
@@ -219,9 +420,16 @@ export default {
       height: auto;
     }
 
-    .add__imageSection,
+    .add__imageSection {
+      margin-bottom: $gutter-padding-big;
+      text-align: center;
+    }
+
     .add__addButton {
-      margin-bottom: 2rem;
+      width: 200px;
+      height: 42px;
+      display: block;
+      margin: 0 auto $gutter-padding-big;
     }
   }
 </style>

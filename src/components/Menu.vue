@@ -8,6 +8,15 @@
         :alt="currentMenuTitle"
       />
     </div>
+    <section v-if="$store.state.showMenu.ingredients && $store.state.showMenu.ingredients.length">
+      <h3> Ingredients </h3>
+      <ol>
+        <li v-for="(element, index) in $store.state.showMenu.ingredients" :key="`${element}-${index}`">
+          {{ element.text }}
+        </li>
+      </ol>
+    </section>
+    <div v-html="currentMenuDescription"></div>
     <p> {{ currentMenuDescription }} </p>
   </div>
   <Loader v-else>
@@ -45,6 +54,9 @@ export default {
 
   created () {
     this.$store.dispatch('showMenu', this.$route.params.key)
+    // this.$store.dispatch('showMenu', this.$route.params.key).then(() => {
+    //   console.log('this.$store.state.showMenu', this.$store.state.showMenu)
+    // })
   },
 
   components: {
@@ -56,6 +68,8 @@ export default {
 
 <style scoped lang='scss'>
   .menu {
+    text-align: center;
+    
     .menu__mainImage {
       width: 100%;
       max-width: 500px;

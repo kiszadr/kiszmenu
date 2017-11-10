@@ -32,9 +32,9 @@
         @click="getMoreMenus"
         v-if="$store.getters.showMoreChecker"
       >
-        <div class="menus__menuWrapper">
-          <p class="menus__itemTitle"> pokaż więcej </p>
-          <!-- <img class="menus__addMoreMenusImg" :src="moreMenusButton" /> -->
+        <div class="menus__menuWrapper menus__menuWrapper--moreMenus">
+          <!-- <p class="menus__itemTitle"> pokaż więcej </p> -->
+          <img class="menus__addMoreMenusImg" :src="moreMenusButton" />
         </div>
       </li>
     </transition-group>
@@ -44,7 +44,7 @@
 <script>
 import Loader from './partials/Loader'
 import NoPhoto from '../assets/noPhoto.png'
-import addImg from '../assets/plus.svg'
+import addImg from '../assets/plus_123456.svg'
 
 export default {
   name: 'menuList',
@@ -92,7 +92,7 @@ export default {
     },
 
     getMoreMenus () {
-      this.getMenusFromFirebase = true
+      // this.getMenusFromFirebase = true
 
       this.$store.dispatch('getMoreMenus').then(() => {
         this.getMenusFromFirebase = false
@@ -107,12 +107,16 @@ export default {
 
 <style lang="scss">
   $menuItemHeight: 100px;
-  $menusBgColor: #aaa;
+  $menusBgColor: #c2c2c2;
   $menusBgHoverColor: #123456;
   $white: #fff;
 
   .menus {
     position: relative;
+
+    h3 {
+      text-align: center;
+    }
 
     .menus__loading {
       position: absolute;
@@ -130,7 +134,15 @@ export default {
       list-style-type: none;
       display: block;
       max-width: 100%;
-      width: 100%;
+      width: 300px;
+
+      @media screen and (min-width: 617px) {
+        width: 600px;
+      }
+
+      @media screen and (min-width: 917px) {
+        width: 900px;
+      }
     }
 
     .menus__list-enter-active {
@@ -142,12 +154,14 @@ export default {
     }
 
     .menus__list-leave-to {
-      opacity: 0;
+      display: none;
+      // opacity: 0;
     }
     
     .menus__list-leave-active {
-      transition: all 1s;
-      opacity: 1;
+      display: none;
+      // transition: all 1s;
+      // opacity: 1;
     }
 
     .menus__search {
@@ -180,14 +194,9 @@ export default {
       cursor: pointer;
       white-space: nowrap;
       box-sizing: border-box;
-      margin: 0.5rem;
+      padding: 0.5rem;
       max-width: 100%;
       vertical-align: top;
-
-      // &:hover {
-      //   background-color: $menusBgHoverColor;
-      //   color: $white;
-      // }
 
       .menus__menuWrapper {
         display: flex;
@@ -196,6 +205,17 @@ export default {
         padding: 10px;
         box-shadow: 3px 3px 15px $menusBgHoverColor;
         box-sizing: border-box;
+
+        &.menus__menuWrapper--moreMenus {
+          justify-content: center;
+          align-items: center;
+
+          &:hover {
+            .menus__addMoreMenusImg {
+              transform: rotate(90deg);
+            }
+          }
+        }
       }
 
       .menus_menuImageWrapper {
@@ -209,6 +229,12 @@ export default {
         object-fit: cover;
         width: 100%;
         height: 100%;
+      }
+
+      .menus__addMoreMenusImg {
+        transition: all 0.5s;
+        height: 64px;
+        width: 64px;
       }
 
       .menus__itemTitle {

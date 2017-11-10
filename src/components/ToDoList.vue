@@ -196,6 +196,7 @@ export default {
     flex-direction: column;
     align-items: center;
     margin: auto;
+    text-align: center;
 
     // got from w3 stylesheet
     .todos__mainButton {

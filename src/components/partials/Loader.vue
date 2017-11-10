@@ -25,6 +25,7 @@ export default {
   .loader__body {
     display: flex;
     flex-direction: column;
+    text-align: center;
 
     img {
       display: block;

@@ -163,17 +163,21 @@ const store = new Vuex.Store({
     },
 
     showMenu (context, menuKey) {
-      if (context.state.activeMenuList.hasOwnProperty(menuKey)) {
-        context.commit('SET_SHOW_MENU', context.state.activeMenuList[menuKey])
-        context.commit('SHOW_MENU_IS_LOADED', true)
-      } else {
-        context.commit('SHOW_MENU_IS_LOADED', false)
-        Firebase.database().ref('kiszmenu').child(menuKey).once('value', function (menu) {
-          // context.commit('MENUS_FROM_FIREBASE', menu.val())
-          context.commit('SET_SHOW_MENU', menu.val())
+      return new Promise((resolve) => {
+        if (context.state.activeMenuList.hasOwnProperty(menuKey)) {
+          context.commit('SET_SHOW_MENU', context.state.activeMenuList[menuKey])
           context.commit('SHOW_MENU_IS_LOADED', true)
-        })
-      }
+          resolve()
+        } else {
+          context.commit('SHOW_MENU_IS_LOADED', false)
+          Firebase.database().ref('kiszmenu').child(menuKey).once('value', function (menu) {
+            // context.commit('MENUS_FROM_FIREBASE', menu.val())
+            context.commit('SET_SHOW_MENU', menu.val())
+            context.commit('SHOW_MENU_IS_LOADED', true)
+            resolve()
+          })
+        }
+      })
     },
 
     getTodoList (context) {

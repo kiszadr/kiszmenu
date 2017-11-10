@@ -1,0 +1,69 @@
+//
+// @file wysiwyg.scss
+// @author Adrian Kiszka
+// @description wysiwyg na formularzu dodawania ogloszeń
+//
+
+//
+// @section Import adaptera GUI
+//
+
+@import 'gui/adapter';
+
+//
+// @section Zmienne lokalne
+//
+
+$wysiwyg-color-1: $primary-color-2 !default;
+$wysiwyg-color-2: $secondary-color-5 !default;
+$wysiwyg-color-3: $white-color !default;
+$wysiwyg-color-4: $black-color !default;
+$wysiwyg-color-5: $secondary-color-2 !default;
+
+//
+// @section Definicja mixina
+//
+
+@mixin c_offerFormWysiwyg($class-name: 'wysiwyg__area') {
+  .#{$class-name} {
+    position: relative;
+    margin-bottom: 30px;
+
+    label {
+      position: absolute;
+      top: 0;
+      left: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 42px;
+    }
+
+    .ql-toolbar { // JS
+      display: flex;
+      justify-content: flex-end;
+      background-color: $wysiwyg-color-5;
+    }
+
+    .ql-container {
+      font-family: $font-primary;
+    }
+
+    .ql-editor { // JS
+      height: 320px;
+    }
+
+    // wysiwyg animation
+    .#{$class-name}--transition-enter-active {
+      transition: opacity 1s;
+    }
+
+    .#{$class-name}--transition-leave-active {
+      transition: opacity 0.5s;
+    }
+
+    .#{$class-name}--transition-enter,
+    .#{$class-name}--transition-leave-to {
+      opacity: 0;
+    }
+  }
+}
