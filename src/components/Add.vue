@@ -89,18 +89,19 @@ export default {
       confirmMessage: '',
       productInput: '',
       products: [
-        {text: '111111'},
-        {text: '222222'},
-        {text: '33333 30%'},
-        {text: '444444'},
-        {text: '555555 przepisu'},
-        {text: '666666'}
+        {text: 'skladnik 1'},
+        {text: 'skladnik 2'},
+        {text: 'skladnik 3'},
+        {text: 'skladnik 4'},
+        {text: 'skladnik 5'},
+        {text: 'skladnik 6'}
       ],
       dragIndex: -1,
       isDragging: false
       // currentDragElementVue: -1
     }
   },
+
   methods: {
     // dragging
     startDragging (e, index) {
@@ -123,6 +124,13 @@ export default {
       //   // this.currentDragElementVue = targetId
       //   Vue.set(this, 'currentDragElementVue', targetId)
       //   console.log('over2222', targetId, currentDragElement, this.currentDragElementVue)
+      // }
+      // if (this.dragIndex !== targetId) {
+      //   console.log('inny indeks')
+      //   const fakeEvent = new Event('fakeEvent', { detail: targetId })
+      //   targetElement.dispatchEvent(event);
+      //   this.stopDragging(fakeEvent)
+      //   this.startDragging(targetId)
       // }
     },
 

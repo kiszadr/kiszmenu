@@ -1,18 +1,15 @@
 <template>
   <header>
-    <h1 class="title"> kiszmenu </h1>
+    <h1 class="title"> <router-link to="/" >kiszmenu</router-link> </h1>
     <ul>
-      <li>
-        <router-link to="/" :class="{'current' : $route.fullPath === '/'}">Home</router-link>
-      </li>
       <li>
         <router-link to="/menus" :class="{'current' : $route.fullPath === '/menus'}">Menus</router-link>
       </li>
       <li>
-        <router-link to="/add" :class="{'current' : $route.fullPath === '/add'}">Go to Add</router-link>
+        <router-link to="/add" :class="{'current' : $route.fullPath === '/add'}">Dodaj</router-link>
       </li>
       <li>
-        <router-link to="/todo" :class="{'current' : $route.fullPath === '/todo'}">TodoList</router-link>
+        <router-link to="/todo" :class="{'current' : $route.fullPath === '/todo'}">Lista</router-link>
       </li>
     </ul>
   </header>
@@ -39,6 +36,10 @@ $white: #fff;
   .title {
     margin: 0;
     padding: 1rem 0;
+    a {
+      color: $white;
+      text-decoration: none;
+    }
   }
 
   ul {
