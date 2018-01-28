@@ -6,6 +6,7 @@
       <label for="menusList"></label>
       <input id="menusList" placeholder="wyszukaj" type="text" name="szukaj" v-model="searchMenu"/>
     </div>
+    <!-- @todo wyniesc do List.vue -->
     <transition-group name="menus__list" class="menus__list" v-if="$store.state.loaded" tag="ul">
       <li class="menus__listItem" v-for="(key, index) in $store.getters.activeMenusGetter"
         :key="key"
@@ -42,10 +43,9 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
-import Loader from './partials/Loader'
-import NoPhoto from '../assets/noPhoto.png'
-import addImg from '../assets/plus_123456.svg'
+import Loader from '../partials/Loader'
+import NoPhoto from '../../assets/noPhoto.png'
+import addImg from '../../assets/plus_123456.svg'
 
 export default {
   name: 'menuList',
@@ -62,7 +62,8 @@ export default {
 
   created () {
     if (this.$store.getters.activeMenusGetter.length === 0) {
-      // created wywoluje sie tylko raz, do obadania
+      // created wywoluje sie tylko raz,
+      // do obadania, bo przydaloby sie nawigowac do elementu, z ktorego sie wraca
       this.$store.dispatch('getMenus').then(() => {
         // console.log('mam menus, sprawdzam klucz: ', this.getShowMenuKey)
       })
@@ -73,12 +74,6 @@ export default {
     searchMenu: function (val) {
       this.$store.dispatch('searchMenu', val)
     }
-  },
-
-  computed: {
-    ...mapGetters([
-      'getShowMenuKey'
-    ])
   },
 
   methods: {
@@ -96,8 +91,6 @@ export default {
     },
 
     getMoreMenus () {
-      // this.getMenusFromFirebase = true
-
       this.$store.dispatch('getMoreMenus').then(() => {
         this.getMenusFromFirebase = false
       })

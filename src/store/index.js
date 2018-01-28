@@ -8,7 +8,7 @@ Vue.use(Vuex)
 
 const store = new Vuex.Store({
   state: {
-    userName: '',
+    user: '',
     activeMenuList: {},
     showMenu: {
       title: '',
@@ -49,7 +49,6 @@ const store = new Vuex.Store({
     },
 
     SET_MENU_TO_SHOW (state, payload) {
-      console.log('set menu', payload)
       Vue.set(state, 'showMenu', payload.menu)
       Vue.set(state.showMenu, 'key', payload.key)
     },
@@ -109,8 +108,8 @@ const store = new Vuex.Store({
       state.privateDatabase = Firebase.database().ref(payload)
     },
 
-    SET_USER_NAME (state, payload) {
-      state.userName = payload
+    SET_USER (state, payload) {
+      state.user = payload
     }
   },
 
@@ -127,9 +126,11 @@ const store = new Vuex.Store({
       return new Promise((resolve, reject) => {
         try {
           context.state.mainDatabase.push(payload).then((status) => {
+            console.log('addToFirebase')
             resolve(status)
           })
         } catch (err) {
+          console.log('error addToFirebase', err)
           reject(err)
         }
       })
@@ -158,8 +159,8 @@ const store = new Vuex.Store({
       })
     },
 
-    addChildAddedListener (context, Firebase) {
-      Firebase.limitToLast(1).on('child_added', (menu, prevChildKey) => {
+    addChildAddedListener (context, database) {
+      database.limitToLast(1).on('child_added', (menu, prevChildKey) => {
         const newMenu = {
           key: menu.key,
           details: menu.val()
@@ -179,7 +180,7 @@ const store = new Vuex.Store({
     },
 
     showMenu (context, menuKey) {
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         if (context.state.activeMenuList.hasOwnProperty(menuKey)) {
           context.commit('SET_MENU_TO_SHOW', { menu: context.state.activeMenuList[menuKey], key: menuKey })
           context.commit('MENU_IS_LOADING', true)
@@ -188,9 +189,14 @@ const store = new Vuex.Store({
           context.commit('MENU_IS_LOADING', false)
           context.state.mainDatabase.child(menuKey).once('value', function (menu) {
             // context.commit('MENUS_FROM_FIREBASE', menu.val())
-            context.commit('SET_MENU_TO_SHOW', { menu: menu.val(), key: menuKey })
-            context.commit('MENU_IS_LOADING', true)
-            resolve()
+            if (menu.val()) {
+              context.commit('SET_MENU_TO_SHOW', { menu: menu.val(), key: menuKey })
+              context.commit('MENU_IS_LOADING', true)
+              resolve()
+            } else {
+              // eslint-disable-next-line prefer-promise-reject-errors
+              reject(menuKey)
+            }
           })
         }
       })
@@ -221,27 +227,59 @@ const store = new Vuex.Store({
       })
     },
 
-    /** Firebase **/
+    /** Firebase auth **/
     setUser (context, payload) {
-      context.commit('SET_USER_NAME', payload.displayName)
+      context.commit('SET_USER', payload.providerData[0])
     },
 
     setEmptyUser (context) {
-      context.commit('SET_USER_NAME', '')
+      context.commit('SET_USER', {})
     },
 
-    signInByGoogle () {
-      const provider = new Firebase.auth.GoogleAuthProvider()
-      Firebase.auth().signInWithPopup(provider)
+    signIn (context, payload) {
+      return new Promise((resolve, reject) => {
+        const provider = new Firebase.auth[`${payload}AuthProvider`]()
+        Firebase.auth().signInWithPopup(provider).then((signInUser) => {
+          console.log('signInUser', signInUser.user.email)
+          Firebase.database()
+            .ref('users')
+            .orderByChild('email')
+            .equalTo(signInUser.user.email)
+            .once('value', (user) => {
+              console.log('user', user.val())
+              if (user.val()) {
+                resolve()
+              } else {
+                context.dispatch('createUserAccount', signInUser.user.providerData[0]).then(() => {
+                  resolve()
+                })
+              }
+            })
+        }, (err) => {
+          console.error('signIn err', err)
+          // eslint-disable-next-line prefer-promise-reject-errors
+          reject()
+        })
+      })
     },
 
-    signInByFacebook () {
-      const provider = new Firebase.auth.FacebookAuthProvider()
-      Firebase.auth().signInWithPopup(provider)
-    },
-
-    logoutUser (context) {
+    signOut (context) {
       Firebase.auth().signOut()
+    },
+
+    createUserAccount (context, payload) {
+      return new Promise((resolve, reject) => {
+        const userDetails = payload
+
+        try {
+          Firebase.database().ref('users').push(userDetails).then((status) => {
+            resolve(status)
+          })
+        } catch (err) {
+          console.log('error addToFirebase', err)
+          reject(err)
+        }
+      })
     }
   },
 
@@ -265,9 +303,9 @@ const store = new Vuex.Store({
       return state.searchedMenu === '' ? [] : Object.keys(state.activeMenuList).filter((key) => state.activeMenuList[key].title.toLowerCase().match(state.searchedMenu, 'i'))
     },
 
-    getUserName: state => state.userName.split(' ')[0],
-    getShowMenu: state => state.showMenu || {},
-    getShowMenuKey: (state, getters) => getters.getShowMenu.key || ''
+    getUserName: state => (state.user.displayName && state.user.displayName.split(' ')[0]) || '',
+    getUserEmail: state => state.user.email || '',
+    getShowMenu: state => state.showMenu || {}
   }
 })
 

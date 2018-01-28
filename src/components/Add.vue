@@ -104,15 +104,9 @@ export default {
     }
   },
 
-  // created () {
-  //   if (this.getUserName === '') {
-  //     this.$router.push(`/`)
-  //   }
-  // },
-
   computed: {
     ...mapGetters([
-      'getUserName'
+      'getUserEmail'
     ])
   },
 
@@ -198,7 +192,7 @@ export default {
         ingredients: this.products,
         image: this.image,
         created: new Date().getTime(),
-        author: this.$store.state.user
+        author: this.getUserEmail
       }
     },
 
@@ -328,7 +322,6 @@ export default {
     },
 
     wysiwygTextChanged (msg) {
-      console.log('wysiwygTextChanged', msg)
       this.message = msg
     }
   },

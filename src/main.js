@@ -25,7 +25,7 @@ new Vue({
       if (user) { // User is signed in!
         this.$store.dispatch('setUser', user)
       } else { // User is signed out!
-        this.$store.dispatch('setEmptyUser', user)
+        this.$store.dispatch('setEmptyUser')
       }
     })
   }

@@ -2,31 +2,42 @@
   <header>
     <h1 class="title"> <router-link to="/" >kiszmenu</router-link> </h1>
     <ul class="header__navi">
-      <li>
+      <li class="header__naviItem">
         <router-link to="/menus" :class="{'current' : $route.fullPath === '/menus'}">Menus</router-link>
       </li>
-      <li v-if="getUserName">
+      <li v-if="getUserName" class="header__naviItem">
         <router-link to="/add" :class="{'current' : $route.fullPath === '/add'}">Dodaj</router-link>
       </li>
-      <li>
+      <li class="header__naviItem">
         <router-link to="/todo" :class="{'current' : $route.fullPath === '/todo'}">Lista</router-link>
       </li>
-      <li class="header__userName" v-if="getUserName" @click="toggleMoreOptions">
+      <li class="header__naviItem header__dropdown" v-if="getUserName" @click="toggleMoreOptions">
         Witaj, {{ getUserName }}!
         <ul v-if="showMoreUserOptions" class="userOptions">
           <li>
-            jeden
+            <router-link to="/private" >Moje przepisy</router-link>
           </li>
           <li>
-            dwa
+            <router-link to="/user" >Moje konto</router-link>
           </li>
-          <li @mousedown.stop="logoutUser">
+          <li @mousedown.stop="signOut">
             wyloguj
           </li>
         </ul>
       </li>
-      <li v-else>
-        <router-link to="/login" :class="{'current' : $route.fullPath === '/login'}">Zaloguj</router-link>
+      <li class="header__naviItem header__dropdown" v-else @click="toggleLoginOptions">
+        Zaloguj
+        <ul v-if="showLoginOptions" class="userOptions">
+          <li @mousedown.stop="signIn('Google')">
+            Google
+          </li>
+          <li @mousedown.stop="signIn('Facebook')">
+            Facebook
+          </li>
+          <li>
+            costam
+          </li>
+        </ul>
       </li>
     </ul>
   </header>
@@ -39,7 +50,8 @@ export default {
   name: 'KiszHeader',
   data () {
     return {
-      showMoreUserOptions: false
+      showMoreUserOptions: false,
+      showLoginOptions: false
     }
   },
   computed: {
@@ -48,16 +60,29 @@ export default {
     ])
   },
   methods: {
+    toggleLoginOptions () {
+      this.showLoginOptions = !this.showLoginOptions
+    },
+
     toggleMoreOptions () {
       this.showMoreUserOptions = !this.showMoreUserOptions
     },
 
-    logoutUser () {
-      this.$store.dispatch('logoutUser').then((resp) => {
-        console.log('resp', resp)
-        this.$router.push(`/`)
+    signIn (provider) {
+      this.$store.dispatch('signIn', provider).then(() => {
+        if (this.$router.history.current.name === 'Logout') {
+          this.$router.push(`/`)
+        }
+      }, () => {
+        console.error('nie udalo sie zalogowac')
+      })
+    },
+
+    signOut () {
+      this.$store.dispatch('signOut').then((resp) => {
+        this.$router.push(`/logout`)
       }, (err) => {
-        console.log('err', err)
+        console.error('err', err)
       })
     }
   }
@@ -92,12 +117,13 @@ $listItemHeight: 30px;
     margin: 0;
     padding: 0 0 1rem;
 
-    li {
+    .header__naviItem {
       padding: 0 1rem;
       height: $listItemHeight;
       line-height: $listItemHeight;
 
-      &.header__userName {
+      &.header__dropdown {
+        cursor: pointer;
         position: relative;
       }
     }

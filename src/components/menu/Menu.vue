@@ -1,5 +1,5 @@
 <template>
-  <div class="menu" v-if="$store.state.menuLoaded">
+  <div class="menu" v-if="$store.state.menuLoaded && componentLoaded">
     <h2> {{ getShowMenu.title }}</h2>
     <!-- <div v-if="currentMenuImage.length > 0" :style="`background-image: url(${currentMenuImage}); width: 100px; height: 100px;`"> -->
     <div v-if="currentMenuImage.length > 0">
@@ -25,14 +25,20 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import Loader from './partials/Loader'
-import NoPhoto from '../assets/noPhoto.png'
+import Loader from '../partials/Loader'
+import NoPhoto from '../../assets/noPhoto.png'
 
 export default {
   name: 'Menu',
   props: {
     showMenu: {
       type: Object
+    }
+  },
+
+  data () {
+    return {
+      componentLoaded: false
     }
   },
 
@@ -51,10 +57,11 @@ export default {
   },
 
   created () {
-    this.$store.dispatch('showMenu', this.$route.params.key)
-    // this.$store.dispatch('showMenu', this.$route.params.key).then(() => {
-    //   console.log('this.$store.state.showMenu', this.$store.state.showMenu)
-    // })
+    this.$store.dispatch('showMenu', this.$route.params.key).then((resp) => {
+      this.componentLoaded = true
+    }, (key) => {
+      this.$router.push(`/puste_menu/${key}`)
+    })
   },
 
   components: {
