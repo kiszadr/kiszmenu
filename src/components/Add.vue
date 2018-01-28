@@ -1,14 +1,14 @@
 <template>
   <div class="add">
     <div class="add__loading" v-if="loading"></div>
-    <h2>Add to menu</h2>
+    <h2 class="add__sectionTitle">Add to menu</h2>
     <ConfirmMessage
       :confirmMessage="confirmMessage"
     >
     </ConfirmMessage>
     <div class="add__title">
-      <label for="addMenuTitle"> Add title </label>
-      <input type="text" id="addMenuTitle" placeholder="tytul" v-model="title"/>
+      <label class="add__titleLabel" for="addMenuTitle"> Add title </label>
+      <input class="add__titleInput" type="text" id="addMenuTitle" placeholder="tytul" v-model="title"/>
     </div>
     <Wysiwyg
       @wysiwygTextChanged="wysiwygTextChanged"
@@ -52,7 +52,8 @@
       <input type="file" id="addFileInput" @change="onFileChange"/>
     </section>
     <section v-else class="add__imageSection">
-      <img :src="image" />
+      <h3> Menu image </h3>
+      <img class="add__galeryImage" :src="image" />
       <button @click="removeImage" class="add__removeButton">Remove image</button>
     </section>
     <button @click="addToBase" type="button" class="add__addButton"> dodaj obj do firebase </button>
@@ -61,6 +62,7 @@
 
 <script>
 import Vue from 'vue'
+import { mapGetters } from 'vuex'
 import ConfirmMessage from './partials/ConfirmMessage'
 import Wysiwyg from './Wysiwyg'
 import UpArrow from '../assets/arrow-up.svg'
@@ -100,6 +102,18 @@ export default {
       isDragging: false
       // currentDragElementVue: -1
     }
+  },
+
+  // created () {
+  //   if (this.getUserName === '') {
+  //     this.$router.push(`/`)
+  //   }
+  // },
+
+  computed: {
+    ...mapGetters([
+      'getUserName'
+    ])
   },
 
   methods: {
@@ -337,7 +351,7 @@ export default {
     max-width: 500px;
     margin: auto;
 
-    h2 {
+    .add__sectionTitle {
       text-align: center;
     }
 
@@ -345,19 +359,18 @@ export default {
       margin-bottom: $gutter-padding-medium;
       padding: 0 $gutter-padding;
 
-      label {
+      .add__titleLabel {
         display: block;
         font-size: 0.8rem;
       }
 
-      input {
+      .add__titleInput {
         width: 100%;
         height: $gutter-padding-big;
         line-height: $gutter-padding-big;
         padding: 0 $gutter-padding;
         box-sizing: border-box;
       }
-
     }
 
     .add__loading {
@@ -401,13 +414,6 @@ export default {
           display: block;
         }
 
-        .add__productsImages {
-          padding: 8px;
-          width: 24px;
-          height: 24px;
-          vertical-align: middle;
-          cursor: pointer;
-        }
 
         &.drag {
           opacity: 0.5;
@@ -415,15 +421,16 @@ export default {
       }
     }
 
+    .add__productsImages,
     .add__addProductButton {
       padding: 8px;
-      width: 24px;
-      height: 24px;
+      width: 20px;
+      height: 20px;
       vertical-align: middle;
       cursor: pointer;
     }
 
-    img {
+    .add__galeryImage {
       width: 200px;
       height: auto;
     }

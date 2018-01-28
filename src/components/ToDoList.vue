@@ -194,7 +194,7 @@ export default {
 
 <style lang="scss" scoped>
   $todo-main-1: #123456;
-  $todo-main-2: #c2c2c2;
+  $todo-main-2: #eee;
   $todo-text-hover: #fff;
   $todo-font-size: 32px;
 

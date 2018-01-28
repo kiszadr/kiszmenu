@@ -42,6 +42,7 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import Loader from './partials/Loader'
 import NoPhoto from '../assets/noPhoto.png'
 import addImg from '../assets/plus_123456.svg'
@@ -61,20 +62,23 @@ export default {
 
   created () {
     if (this.$store.getters.activeMenusGetter.length === 0) {
-      this.$store.dispatch('getMenus')
+      // created wywoluje sie tylko raz, do obadania
+      this.$store.dispatch('getMenus').then(() => {
+        // console.log('mam menus, sprawdzam klucz: ', this.getShowMenuKey)
+      })
     }
   },
-
-  // mounted () {
-    // todo ustawienie ekranu na ostatnio ogladanym id menu
-  //   console.log('mounted')
-  //   // :class="{'active' : $route.params.key === key }"
-  // },
 
   watch: {
     searchMenu: function (val) {
       this.$store.dispatch('searchMenu', val)
     }
+  },
+
+  computed: {
+    ...mapGetters([
+      'getShowMenuKey'
+    ])
   },
 
   methods: {

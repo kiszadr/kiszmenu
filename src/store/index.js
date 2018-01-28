@@ -8,8 +8,7 @@ Vue.use(Vuex)
 
 const store = new Vuex.Store({
   state: {
-    isSignedIn: false,
-    user: 'kiszadr',
+    userName: '',
     activeMenuList: {},
     showMenu: {
       title: '',
@@ -27,7 +26,9 @@ const store = new Vuex.Store({
     lastMenuListKey: '',
     moreMenusClickCounter: 0,
     currentMenusShown: 5,
-    getNewMenusCounter: 6
+    getNewMenusCounter: 6,
+    mainDatabase: {},
+    todoListDatabase: {}
   },
 
   mutations: {
@@ -47,11 +48,13 @@ const store = new Vuex.Store({
       })
     },
 
-    SET_SHOW_MENU (state, menu) {
-      Vue.set(state, 'showMenu', menu)
+    SET_MENU_TO_SHOW (state, payload) {
+      console.log('set menu', payload)
+      Vue.set(state, 'showMenu', payload.menu)
+      Vue.set(state.showMenu, 'key', payload.key)
     },
 
-    SHOW_MENU_IS_LOADED (state, bool) {
+    MENU_IS_LOADING (state, bool) {
       state.menuLoaded = bool
     },
 
@@ -75,10 +78,6 @@ const store = new Vuex.Store({
       state.todosLoaded = true
     },
 
-    FIREBASE_IS_LOADED (state, bool) {
-      state.loaded = bool
-    },
-
     MENU_CHILD_ADDED (state, newMenu) {
       if (!state.activeMenuList[newMenu.key]) {
         let menuObj = {}
@@ -92,6 +91,26 @@ const store = new Vuex.Store({
 
     INCREASE_MORE_MENUS_COUNTER (state) {
       state.moreMenusClickCounter += 1
+    },
+
+    FIREBASE_IS_LOADED (state, bool) {
+      state.loaded = bool
+    },
+
+    SET_MAIN_DATABASE_NAME (state, payload) {
+      state.mainDatabase = Firebase.database().ref(payload)
+    },
+
+    SET_TODOLIST_DATABASE_NAME (state, payload) {
+      state.todoListDatabase = Firebase.database().ref(payload)
+    },
+
+    SET_USER_PRIVATE_DATABASE_NAME (state, payload) {
+      state.privateDatabase = Firebase.database().ref(payload)
+    },
+
+    SET_USER_NAME (state, payload) {
+      state.userName = payload
     }
   },
 
@@ -106,9 +125,8 @@ const store = new Vuex.Store({
 
     addToFirebase (context, payload) {
       return new Promise((resolve, reject) => {
-        const kiszmenu = Firebase.database().ref('kiszmenu')
         try {
-          kiszmenu.push(payload).then((status) => {
+          context.state.mainDatabase.push(payload).then((status) => {
             resolve(status)
           })
         } catch (err) {
@@ -121,7 +139,7 @@ const store = new Vuex.Store({
       return new Promise((resolve, reject) => {
         const childKey = payload.key
         const childMenu = payload.menu
-        Firebase.database().ref('kiszmenu').child(childKey).set(childMenu).then(() => {
+        context.state.mainDatabase.child(childKey).set(childMenu).then(() => {
           resolve()
         }, (err) => {
           reject(err)
@@ -132,17 +150,16 @@ const store = new Vuex.Store({
     getMenus (context) {
       context.commit('FIREBASE_IS_LOADED', false)
       return new Promise((resolve) => {
-        const kiszmenu = Firebase.database().ref('kiszmenu')
-        kiszmenu.orderByKey().limitToLast(context.state.getNewMenusCounter - 1).once('value', (menu) => {
+        context.state.mainDatabase.orderByKey().limitToLast(context.state.getNewMenusCounter - 1).once('value', (menu) => {
           context.commit('MENUS_FROM_FIREBASE', menu.val())
-          context.dispatch('addChildAddedListener', kiszmenu)
+          context.dispatch('addChildAddedListener', context.state.mainDatabase)
           resolve()
         })
       })
     },
 
-    addChildAddedListener (context, firebase) {
-      firebase.limitToLast(1).on('child_added', (menu, prevChildKey) => {
+    addChildAddedListener (context, Firebase) {
+      Firebase.limitToLast(1).on('child_added', (menu, prevChildKey) => {
         const newMenu = {
           key: menu.key,
           details: menu.val()
@@ -153,8 +170,7 @@ const store = new Vuex.Store({
 
     getMoreMenus (context) {
       return new Promise((resolve) => {
-        const kiszmenu = Firebase.database().ref('kiszmenu')
-        kiszmenu.orderByKey().endAt(context.state.lastMenuListKey).limitToLast(context.state.getNewMenusCounter + 1).once('value', (menu) => {
+        context.state.mainDatabase.orderByKey().endAt(context.state.lastMenuListKey).limitToLast(context.state.getNewMenusCounter + 1).once('value', (menu) => {
           context.commit('MENUS_FROM_FIREBASE', menu.val())
           context.commit('INCREASE_MORE_MENUS_COUNTER')
           resolve()
@@ -165,15 +181,15 @@ const store = new Vuex.Store({
     showMenu (context, menuKey) {
       return new Promise((resolve) => {
         if (context.state.activeMenuList.hasOwnProperty(menuKey)) {
-          context.commit('SET_SHOW_MENU', context.state.activeMenuList[menuKey])
-          context.commit('SHOW_MENU_IS_LOADED', true)
+          context.commit('SET_MENU_TO_SHOW', { menu: context.state.activeMenuList[menuKey], key: menuKey })
+          context.commit('MENU_IS_LOADING', true)
           resolve()
         } else {
-          context.commit('SHOW_MENU_IS_LOADED', false)
-          Firebase.database().ref('kiszmenu').child(menuKey).once('value', function (menu) {
+          context.commit('MENU_IS_LOADING', false)
+          context.state.mainDatabase.child(menuKey).once('value', function (menu) {
             // context.commit('MENUS_FROM_FIREBASE', menu.val())
-            context.commit('SET_SHOW_MENU', menu.val())
-            context.commit('SHOW_MENU_IS_LOADED', true)
+            context.commit('SET_MENU_TO_SHOW', { menu: menu.val(), key: menuKey })
+            context.commit('MENU_IS_LOADING', true)
             resolve()
           })
         }
@@ -185,9 +201,7 @@ const store = new Vuex.Store({
         if (context.state.todos.length > 0) {
           resolve(context.state.todos)
         } else {
-          const todoList = Firebase.database().ref('todoList')
-
-          todoList.once('value', (list) => {
+          context.state.todoListDatabase.once('value', (list) => {
             const todos = list.val()
             context.commit('TODOS_FROM_FIREBASE', todos)
             resolve(todos)
@@ -198,13 +212,36 @@ const store = new Vuex.Store({
 
     setTodoList (context, list) {
       return new Promise((resolve, reject) => {
-        Firebase.database().ref('todoList').set(list).then(() => {
+        context.state.todoListDatabase.set(list).then(() => {
           resolve()
         },
         (err) => {
           reject(err)
         })
       })
+    },
+
+    /** Firebase **/
+    setUser (context, payload) {
+      context.commit('SET_USER_NAME', payload.displayName)
+    },
+
+    setEmptyUser (context) {
+      context.commit('SET_USER_NAME', '')
+    },
+
+    signInByGoogle () {
+      const provider = new Firebase.auth.GoogleAuthProvider()
+      Firebase.auth().signInWithPopup(provider)
+    },
+
+    signInByFacebook () {
+      const provider = new Firebase.auth.FacebookAuthProvider()
+      Firebase.auth().signInWithPopup(provider)
+    },
+
+    logoutUser (context) {
+      Firebase.auth().signOut()
     }
   },
 
@@ -226,7 +263,11 @@ const store = new Vuex.Store({
 
     searchedMenu: state => {
       return state.searchedMenu === '' ? [] : Object.keys(state.activeMenuList).filter((key) => state.activeMenuList[key].title.toLowerCase().match(state.searchedMenu, 'i'))
-    }
+    },
+
+    getUserName: state => state.userName.split(' ')[0],
+    getShowMenu: state => state.showMenu || {},
+    getShowMenuKey: (state, getters) => getters.getShowMenu.key || ''
   }
 })
 

@@ -1,23 +1,22 @@
 <template>
   <div class="menu" v-if="$store.state.menuLoaded">
-    <h2> {{ currentMenuTitle }}</h2>
+    <h2> {{ getShowMenu.title }}</h2>
     <!-- <div v-if="currentMenuImage.length > 0" :style="`background-image: url(${currentMenuImage}); width: 100px; height: 100px;`"> -->
     <div v-if="currentMenuImage.length > 0">
       <img class="menu__mainImage"
         :src="currentMenuImage"
-        :alt="currentMenuTitle"
+        :alt="getShowMenu.title"
       />
     </div>
     <section v-if="$store.state.showMenu.ingredients && $store.state.showMenu.ingredients.length">
       <h3> Ingredients </h3>
-      <ol>
+      <ol class="menu__ingredients">
         <li v-for="(element, index) in $store.state.showMenu.ingredients" :key="`${element}-${index}`">
           {{ element.text }}
         </li>
       </ol>
     </section>
-    <div v-html="currentMenuDescription"></div>
-    <p> {{ currentMenuDescription }} </p>
+    <p v-html="getShowMenu.description"></p>
   </div>
   <Loader v-else>
     <h6> ładuję menu </h6>
@@ -25,6 +24,7 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import Loader from './partials/Loader'
 import NoPhoto from '../assets/noPhoto.png'
 
@@ -37,18 +37,16 @@ export default {
   },
 
   computed: {
-    currentMenuTitle () {
-      return this.$store.state.showMenu.title
-    },
-    currentMenuDescription () {
-      return this.$store.state.showMenu.description
-    },
+    ...mapGetters([
+      'getShowMenu'
+    ]),
+
     currentMenuImage () {
-      if (this.currentMenuTitle) {
-        const firebaseImg = this.$store.state.showMenu.imageMedium ? this.$store.state.showMenu.imageMedium : this.$store.state.showMenu.image
-        return firebaseImg || NoPhoto
+      if (this.getShowMenu.title) {
+        return this.getShowMenu.imageMedium || this.getShowMenu.image || NoPhoto
+      } else {
+        return ''
       }
-      return ''
     }
   },
 
@@ -76,6 +74,14 @@ export default {
       height: auto;
       max-height: 400px;
       object-fit: contain;
+    }
+
+    .menu__ingredients {
+      list-style-type: none;
+      font-size: 14px;
+      font-style: italic;
+      padding: 0 0 15px;
+      border-bottom: 1px solid #eee;
     }
   }
 </style>

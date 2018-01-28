@@ -1,16 +1,29 @@
 <template>
   <div class="hello">
-    <h2>{{ msg }}</h2>
-    <p> coś o mnie... </p>
+    <p> login </p>
+
+    <button @click="signIn('Google')"> Google </button>
+    <button @click="signIn('Facebook')"> Facebook </button>
   </div>
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
+
 export default {
-  name: 'HelloWorld',
-  data () {
-    return {
-      msg: 'Welcome to kiszmenu App'
+  name: 'Login',
+
+  computed: {
+    ...mapGetters([
+      'getUserName'
+    ])
+  },
+
+  methods: {
+    signIn (provider) {
+      this.$store.dispatch(`signInBy${provider}`).then(() => {
+        this.$router.push(`/`)
+      })
     }
   }
 }
